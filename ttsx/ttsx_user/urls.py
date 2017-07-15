@@ -10,4 +10,5 @@ urlpatterns = [
     url(r'^center/$',views.center),
     url(r'^order/$',views.order),
     url(r'^site/$',views.site),
+    url(r'^islogin/$',views.islogin),
 ]

@@ -22,4 +22,4 @@ class GoodsInfo(models.Model):
     gsubtitle=models.CharField(max_length=200)  #商品描述
     gkucun = models.IntegerField(default=100)   #库存
     gcontent=HTMLField()    #富文本编辑器
-    gtype=models.ForeignKey('TypeInfo')    #外键
+    gtype=models.ForeignKey('TypeInfo')   #外键

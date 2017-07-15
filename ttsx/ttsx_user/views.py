@@ -4,6 +4,9 @@ from models import *
 from hashlib import sha1
 from django.http import JsonResponse
 import datetime
+from ttsx_goods.models import GoodsInfo
+from ttsx_order.models import OrderMain
+from django.core.paginator import Paginator
 
 # Create your views here.
 
@@ -91,6 +94,14 @@ def login_handle(request):
             return render(request,'ttsx_user/login.html',context)
 
 
+# 判断用户是否登录,用于购物车
+def islogin(request):
+    result = 0
+    if request.session.has_key('uid'):
+        result = 1
+    return JsonResponse({'islogin':result})
+
+
 #清除路径
 def logout(request):
     request.session.flush()
@@ -113,13 +124,35 @@ def zhuang(func):
 #用户中心
 def center(request):
     user = UserInfo.objects.get(pk=request.session['uid'])
-    context = {'title':'用户中心','user':user}
+    #查询最近浏览
+    gids = request.COOKIES.get('goods_ids', '').split(',')
+    #因为刚开始有一个'',先要将其删除掉
+    gids.pop()
+    glist = []
+    for gid in gids:
+        glist.append(GoodsInfo.objects.get(id=gid))
+    context = {'title':'用户中心','user':user,'list':glist}
     return render(request,'ttsx_user/center.html',context)
 
 @zhuang
 #订单
 def order(request):
-    context = {'title':'用户订单'}
+    pindex = int(request.GET.get('pindex','1'))
+    # 查询当前用户所有订单,并进行分页
+    uid = request.session.get('uid')
+    order_list = OrderMain.objects.filter(user_id=uid).order_by('-order_date')
+    p = Paginator(order_list,1)
+    order_page = p.page(pindex)
+    page_list = []
+    if p.num_pages<5:
+        page_list = p.page_range
+    elif order_page.number <=2:
+        page_list = range(1,6)
+    elif order_page.number >= p.num_pages-1:
+        page_list = range(p.num_pages-4,p.num_pages+1)
+    else:
+        page_list = range(pindex-2,pindex+3)
+    context = {'title':'用户订单','order_page':order_page,'page_list':page_list}
     return render(request,'ttsx_user/order.html',context)
 
 @zhuang
@@ -141,6 +174,4 @@ def site(request):
 
     context = {'title': '收货地址','user':user}
     return render(request, 'ttsx_user/site.html', context)
-
-
 
